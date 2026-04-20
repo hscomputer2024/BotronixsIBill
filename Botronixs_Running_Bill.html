@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice - Botronixs</title>
+
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial;margin:0;background:#e5e7eb}
+.container{max-width:900px;margin:auto;background:#fff;padding:12px}
+
+/* HEADER */
+.header{display:flex;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:10px}
+.brand img{height:45px}
+.brand h1{margin:0;font-size:20px;color:#2c3e50}
+
+.invoice-title{font-size:20px;color:#3b5b92;text-align:right}
+.small{font-size:12px}
+.center-input{ text-align:center; }
+
+/* SECTION BOX */
+.section-box{padding:8px;border-radius:6px;margin-top:10px}
+.biller-box{background:#eafaf1}
+.customer-box{background:#f3e8ff}
+
+.label{font-weight:bold;font-size:12px;text-decoration:underline;margin-bottom:4px;display:block}
+
+.flex{display:flex;gap:10px}
+.flex div{flex:1}
+
+input,textarea{width:100%;padding:4px;font-size:12px;border:1px solid #ccc}
+textarea{resize:none}
+
+.readonly{background:#fff9c4}
+.small-input{font-size:11px}
+
+.table{width:100%;border-collapse:collapse;font-size:11px;margin-top:10px}
+.table th{background:#3b5b92;color:#fff;font-weight:bold}
+.table th,.table td{border:1px solid #999;padding:4px;text-align:center}
+
+.total-box{display:flex;justify-content:flex-end;margin-top:10px}
+.total-box div{width:280px;font-size:13px}
+.total-box b{display:block;margin-top:6px}
+
+button{padding:8px 14px;font-size:13px;border:none;border-radius:4px;background:#2980b9;color:white;cursor:pointer}
+.delete-btn{background:red;color:white;padding:4px 6px;font-size:10px}
+
+.signature{margin-top:30px;text-align:right}
+.signature img{height:50px}
+
+@media print{
+ body{background:#fff}
+ button{display:none}
+ input,textarea{border:none}
+ .table th{background:#000 !important;color:#fff !important;font-weight:bold}
+}
+</style>
+</head>
+
+<body>
+<div class="container" id="bill">
+
+<div class="header">
+<div class="brand">
+<img src="Botronixs_Logo.PNG" alt="logo">
+<h1>Botronixs - Electronics Mart</h1>
+</div>
+<div class="invoice-title">
+<b>INVOICE</b><br>
+<span class="small">Date:<br><input id="date" class="readonly center-input" readonly></span><br>
+<span class="small">Invoice No:<br><input id="billNo" class="readonly center-input" readonly></span>
+</div>
+</div>
+
+<div class="flex">
+<div class="section-box biller-box">
+<span class="label">BILLER DETAILS</span>
+<label>GST No</label>
+<input id="b_gst" value="19CXBPM3361A1ZS">
+<label>Contact</label>
+<input id="b_contact" value="73843922236">
+<label>Email</label>
+<input id="b_email" value="botronixiitkgp@gmail.com">
+</div>
+
+<div class="section-box customer-box">
+<span class="label">CUSTOMER DETAILS</span>
+<label>Address</label>
+<textarea rows="2"></textarea>
+<div class="small-input">
+<label><b>GST</b></label>
+<input>
+<label><b>Contact</b></label>
+<input>
+</div>
+</div>
+</div>
+
+<table class="table" id="items">
+<thead>
+<tr>
+<th>SL No.</th><th>ID</th><th>HSN</th><th>Description</th><th>Price</th><th>Dis</th><th>Qty</th>
+<th>Taxable</th><th>CGST%</th><th>CGST</th><th>SGST%</th><th>SGST</th><th>Total</th><th>Del</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<button onclick="addRow()">+ Add Item</button>
+
+<div class="total-box">
+<div>
+<b>Current Total: <input id="subtotal" class="readonly" readonly></b>
+<b>Shipping: <input id="shipping" value="0"></b>
+<b>IGST: <input id="igst" value="0"></b>
+<b>Round Off: <input id="round" class="readonly" readonly></b>
+<b>Payable Amount: <input id="grand" class="readonly" readonly></b>
+</div>
+</div>
+
+<div class="section">
+<b>Amount in Words:</b>
+<div id="words" class="small"></div>
+</div>
+
+<div class="signature">
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Signature_example.svg/512px-Signature_example.svg.png"><br>
+Authorized Signature
+</div>
+
+<button onclick="printColor()">Print Color</button>
+<button onclick="printBW()">Print B/W</button>
+
+</div>
+
+<script>
+function init(){
+ document.getElementById('date').value=new Date().toLocaleDateString();
+ document.getElementById('billNo').value='INV-B-'+Math.floor(Math.random()*10000);
+ addRow();
+}
+
+function addRow(){
+ let tbody=document.querySelector('#items tbody');
+ let row=tbody.insertRow();
+ let rowIndex=tbody.rows.length;
+
+ let cols=['sl','text','text','textarea','number','number','number','ro','number','ro','number','ro','ro','btn'];
+ cols.forEach((t,i)=>{
+  let c=row.insertCell();
+  if(t==='sl') c.innerText=rowIndex;
+  else if(t==='ro')c.innerHTML='<input class="readonly" readonly>';
+  else if(t==='textarea')c.innerHTML='<textarea rows="2" oninput="calc(this)"></textarea>';
+  else if(t==='btn')c.innerHTML='<button class="delete-btn" onclick="delRow(this)">X</button>';
+  else c.innerHTML=`<input type="${t}" oninput="calc(this)">`;
+ });
+}
+
+function delRow(btn){
+ btn.closest('tr').remove();
+ reindex(); calcTotal();
+}
+
+function reindex(){
+ document.querySelectorAll('#items tbody tr').forEach((r,i)=>r.cells[0].innerText=i+1);
+}
+
+function calc(el){
+ let r=el.closest('tr');
+ let price=+r.cells[4].children[0].value||0;
+ let dis=+r.cells[5].children[0].value||0;
+ let qty=+r.cells[6].children[0].value||0;
+ let cg=+r.cells[8].children[0].value||0;
+ let sg=+r.cells[10].children[0].value||0;
+
+ let taxable=(price-dis)*qty;
+ let cgst=taxable*cg/100;
+ let sgst=taxable*sg/100;
+ let total=taxable+cgst+sgst;
+
+ r.cells[7].children[0].value=taxable.toFixed(2);
+ r.cells[9].children[0].value=cgst.toFixed(2);
+ r.cells[11].children[0].value=sgst.toFixed(2);
+ r.cells[12].children[0].value=total.toFixed(2);
+
+ calcTotal();
+}
+
+function calcTotal(){
+ let sum=0;
+ document.querySelectorAll('#items tbody tr').forEach(r=>{
+  sum+=+r.cells[12].children[0].value||0;
+ });
+
+ document.getElementById('subtotal').value=sum.toFixed(2);
+
+ let ship=+document.getElementById('shipping').value||0;
+ let igst=+document.getElementById('igst').value||0;
+
+ let gross=sum+ship+igst;
+ let rounded=Math.round(gross);
+ let roundOff=(rounded-gross).toFixed(2);
+
+ document.getElementById('round').value=roundOff;
+ document.getElementById('grand').value=rounded;
+ document.getElementById('words').innerText=numberToWords(rounded)+' Rupees Only';
+}
+
+function numberToWords(num){
+ let a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+ let b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+ if(num<20) return a[num];
+ if(num<100) return b[Math.floor(num/10)]+' '+a[num%10];
+ if(num<1000) return a[Math.floor(num/100)]+' Hundred '+numberToWords(num%100);
+ if(num<100000) return numberToWords(Math.floor(num/1000))+' Thousand '+numberToWords(num%1000);
+ return num;
+}
+
+['shipping','igst'].forEach(id=>document.getElementById(id).addEventListener('input',calcTotal));
+
+function printColor(){document.body.classList.remove('bw');window.print();}
+function printBW(){document.body.classList.add('bw');window.print();}
+
+init();
+</script>
+
+</body>
+</html>
