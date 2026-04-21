@@ -147,6 +147,8 @@ Authorized Signature
 
 
 <script>
+let mode = "forward"; // control calculation direction
+
 function init(){
  document.getElementById('date').value=new Date().toLocaleDateString();
  document.getElementById('billNo').value='INV-B-'+Math.floor(Math.random()*10000);
@@ -168,16 +170,16 @@ function addRow(){
   else if(t==='ro') c.innerHTML='<input class="readonly" readonly>';
 
   else if(t==='total') 
-    c.innerHTML='<input type="number" oninput="backCalc(this)">';
+    c.innerHTML='<input type="number" oninput="handleTotal(this)">';
 
   else if(t==='textarea') 
-    c.innerHTML='<textarea rows="2" oninput="calc(this)"></textarea>';
+    c.innerHTML='<textarea rows="2" oninput="handleForward(this)"></textarea>';
 
   else if(t==='btn') 
     c.innerHTML='<button class="delete-btn" onclick="delRow(this)">X</button>';
 
   else 
-    c.innerHTML=`<input type="${t}" oninput="calc(this)">`;
+    c.innerHTML=`<input type="${t}" oninput="handleForward(this)">`;
  });
 }
 
@@ -192,8 +194,27 @@ function reindex(){
  .forEach((r,i)=>r.cells[0].innerText=i+1);
 }
 
+/* =========================
+   FORWARD HANDLER
+========================= */
+function handleForward(el){
+ mode = "forward";
+ calc(el);
+}
+
+/* =========================
+   BACKWARD HANDLER
+========================= */
+function handleTotal(el){
+ mode = "backward";
+ calc(el);
+}
+
+/* =========================
+   MAIN CALC ENGINE
+========================= */
 function calc(el){
- let r=el.closest('tr');
+ let r = el.closest('tr');
 
  let price=+r.cells[4].children[0].value||0;
  let dis=+r.cells[5].children[0].value||0;
@@ -202,67 +223,44 @@ function calc(el){
  let cgP=+r.cells[8].children[0].value||0;
  let sgP=+r.cells[10].children[0].value||0;
 
- let taxable=(price-dis)*qty;
+ let totalInput = r.cells[12].children[0];
 
- let cgAmt=taxable*cgP/100;
- let sgAmt=taxable*sgP/100;
+ if(mode === "forward"){
+   let taxable=(price-dis)*qty;
+   let cgAmt=taxable*cgP/100;
+   let sgAmt=taxable*sgP/100;
+   let total=taxable+cgAmt+sgAmt;
 
- let total=taxable+cgAmt+sgAmt;
+   r.cells[7].children[0].value=taxable.toFixed(2);
+   r.cells[9].children[0].value=cgAmt.toFixed(2);
+   r.cells[11].children[0].value=sgAmt.toFixed(2);
+   totalInput.value=total.toFixed(2);
+ }
 
- r.cells[7].children[0].value=taxable.toFixed(2);
- r.cells[9].children[0].value=cgAmt.toFixed(2);
- r.cells[11].children[0].value=sgAmt.toFixed(2);
+ else if(mode === "backward"){
+   let total=+totalInput.value||0;
 
- // ⚠️ important: update total only if user NOT editing it
- if(document.activeElement !== r.cells[12].children[0]){
-   r.cells[12].children[0].value=total.toFixed(2);
+   let taxPercent = cgP + sgP;
+   let taxable = total / (1 + taxPercent/100);
+
+   let cgAmt = taxable * cgP / 100;
+   let sgAmt = taxable * sgP / 100;
+
+   let newQty = qty || 1;
+   let newPrice = taxable / newQty;
+
+   r.cells[4].children[0].value=newPrice.toFixed(2);
+   r.cells[7].children[0].value=taxable.toFixed(2);
+   r.cells[9].children[0].value=cgAmt.toFixed(2);
+   r.cells[11].children[0].value=sgAmt.toFixed(2);
  }
 
  calcTotal();
 }
 
-function backCalc(el){
- let r=el.closest('tr');
-
- let total=+r.cells[12].children[0].value||0;
-
- let cgP=+r.cells[8].children[0].value||0;
- let sgP=+r.cells[10].children[0].value||0;
-
- let taxPercent = cgP + sgP;
-
- let taxable = total / (1 + taxPercent/100);
-
- let cgAmt = taxable * cgP / 100;
- let sgAmt = taxable * sgP / 100;
-
- let qty=+r.cells[6].children[0].value||1;
-
- let price = taxable / qty;
-
- // update values
- r.cells[4].children[0].value=price.toFixed(2);
- r.cells[7].children[0].value=taxable.toFixed(2);
- r.cells[9].children[0].value=cgAmt.toFixed(2);
- r.cells[11].children[0].value=sgAmt.toFixed(2);
-
- calcTotal();
-}
-
-function calcIGST(){
- let total=+document.getElementById('subtotal').value||0;
- let p=+document.getElementById('igst_p').value||0;
- document.getElementById('igst').value=(total*p/100).toFixed(2);
- calcTotal();
-}
-
-function calcIGSTAmt(){
- let total=+document.getElementById('subtotal').value||0;
- let amt=+document.getElementById('igst').value||0;
- document.getElementById('igst_p').value=((amt/total)*100||0).toFixed(2);
- calcTotal();
-}
-
+/* =========================
+   TOTAL SUMMARY
+========================= */
 function calcTotal(){
  let sum=0;
 
@@ -285,6 +283,26 @@ function calcTotal(){
  document.getElementById('words').innerText=numberToWords(rounded)+' Rupees Only';
 }
 
+/* =========================
+   IGST
+========================= */
+function calcIGST(){
+ let total=+document.getElementById('subtotal').value||0;
+ let p=+document.getElementById('igst_p').value||0;
+ document.getElementById('igst').value=(total*p/100).toFixed(2);
+ calcTotal();
+}
+
+function calcIGSTAmt(){
+ let total=+document.getElementById('subtotal').value||0;
+ let amt=+document.getElementById('igst').value||0;
+ document.getElementById('igst_p').value=((amt/total)*100||0).toFixed(2);
+ calcTotal();
+}
+
+/* =========================
+   WORDS
+========================= */
 function numberToWords(num){
  let a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
  let b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
