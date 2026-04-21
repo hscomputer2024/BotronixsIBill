@@ -10,7 +10,6 @@
 body{font-family:Arial;margin:0;background:#e5e7eb}
 .container{max-width:900px;margin:auto;background:#fff;padding:12px}
 
-/* HEADER */
 .header{display:flex;justify-content:space-between;align-items:center}
 .brand{display:flex;align-items:center;gap:10px}
 .brand img{height:45px}
@@ -18,9 +17,8 @@ body{font-family:Arial;margin:0;background:#e5e7eb}
 
 .invoice-title{font-size:20px;color:#3b5b92;text-align:right}
 .small{font-size:12px}
-.center-input{ text-align:center; }
+.center-input{text-align:center}
 
-/* SECTION BOX */
 .section-box{padding:8px;border-radius:6px;margin-top:10px}
 .biller-box{background:#eafaf1}
 .customer-box{background:#f3e8ff}
@@ -30,7 +28,7 @@ body{font-family:Arial;margin:0;background:#e5e7eb}
 .flex{display:flex;gap:10px}
 .flex div{flex:1}
 
-input,textarea{width:100%;padding:4px;font-size:12px;border:1px solid #ccc}
+input,textarea{width:100%;padding:4px;font-size:12px;border:1px solid #ccc;margin-bottom:6px}
 textarea{resize:none}
 
 .readonly{background:#fff9c4}
@@ -56,6 +54,10 @@ button{padding:8px 14px;font-size:13px;border:none;border-radius:4px;background:
  input,textarea{border:none}
  .table th{background:#000 !important;color:#fff !important;font-weight:bold}
 }
+.label{
+    font-weight:bold;
+}
+
 </style>
 </head>
 
@@ -63,36 +65,41 @@ button{padding:8px 14px;font-size:13px;border:none;border-radius:4px;background:
 <div class="container" id="bill">
 
 <div class="header">
-<div class="brand">
-<img src="Botronixs_Logo.PNG" alt="logo">
+
+<div class="brand" style="flex-direction:column; align-items:flex-start;">
+<img src="Botronixs_Logo.PNG">
 <h1>Botronixs - Electronics Mart</h1>
-</div>
-<div class="invoice-title">
-<b>INVOICE</b><br>
-<span class="small">Date:<br><input id="date" class="readonly center-input" readonly></span><br>
 <span class="small">Invoice No:<br><input id="billNo" class="readonly center-input" readonly></span>
 </div>
+
+<div class="invoice-title">
+<b>INVOICE</b><br>
+<span class="small">Date:<br><input id="date" class="readonly center-input" readonly></span>
+</div>
+
 </div>
 
 <div class="flex">
 <div class="section-box biller-box">
 <span class="label">BILLER DETAILS</span>
-<label>GST No</label>
-<input id="b_gst" value="19CXBPM3361A1ZS">
-<label>Contact</label>
-<input id="b_contact" value="73843922236">
-<label>Email</label>
-<input id="b_email" value="botronixiitkgp@gmail.com">
+<label>GST No :</label>
+<input value="19CXBPM3361A1ZS">
+<label>Contact :</label>
+<input value="73843922236">
+<label>Email :</label>
+<input value="botronixiitkgp@gmail.com">
 </div>
 
 <div class="section-box customer-box">
 <span class="label">CUSTOMER DETAILS</span>
-<label>Address</label>
+<label>Customer Name :</label>
+<input>
+<label>Address :</label>
 <textarea rows="2"></textarea>
 <div class="small-input">
-<label><b>GST</b></label>
+<label><b>GST : </b></label>
 <input>
-<label><b>Contact</b></label>
+<label><b>Contact : </b></label>
 <input>
 </div>
 </div>
@@ -101,7 +108,7 @@ button{padding:8px 14px;font-size:13px;border:none;border-radius:4px;background:
 <table class="table" id="items">
 <thead>
 <tr>
-<th>SL No.</th><th>ID</th><th>HSN</th><th>Description</th><th>Price</th><th>Dis</th><th>Qty</th>
+<th>SL</th><th>ID</th><th>HSN</th><th>Description</th><th>Price</th><th>Dis</th><th>Qty</th>
 <th>Taxable</th><th>CGST%</th><th>CGST</th><th>SGST%</th><th>SGST</th><th>Total</th><th>Del</th>
 </tr>
 </thead>
@@ -114,16 +121,15 @@ button{padding:8px 14px;font-size:13px;border:none;border-radius:4px;background:
 <div>
 <b>Current Total: <input id="subtotal" class="readonly" readonly></b>
 <b>Shipping: <input id="shipping" value="0"></b>
-<b>IGST: <input id="igst" value="0"></b>
+<b>IGST %: <input id="igst_p" value="0" oninput="calcIGST()"></b>
+<b>IGST Amt: <input id="igst" value="0" oninput="calcIGSTAmt()"></b>
 <b>Round Off: <input id="round" class="readonly" readonly></b>
 <b>Payable Amount: <input id="grand" class="readonly" readonly></b>
 </div>
 </div>
 
-<div class="section">
-<b>Amount in Words:</b>
-<div id="words" class="small"></div>
-</div>
+<div><b>Amount in Words:</b>
+<div id="words"></div></div>
 
 <div class="signature">
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Signature_example.svg/512px-Signature_example.svg.png"><br>
@@ -134,9 +140,12 @@ Authorized Signature
 <button onclick="printBW()">Print B/W</button>
 
 </div>
-       <p style="font-size:11px;color:gray;">
-       This is a locally generated invoice tool. No data is stored or transmitted.
-       </p>
+
+        <p style="font-size:11px;color:gray;">
+        This is a locally generated invoice tool. No data is stored or transmitted.
+        </p>
+
+
 <script>
 function init(){
  document.getElementById('date').value=new Date().toLocaleDateString();
@@ -147,51 +156,116 @@ function init(){
 function addRow(){
  let tbody=document.querySelector('#items tbody');
  let row=tbody.insertRow();
- let rowIndex=tbody.rows.length;
+ let idx=tbody.rows.length;
 
- let cols=['sl','text','text','textarea','number','number','number','ro','number','ro','number','ro','ro','btn'];
+ let cols=['sl','text','text','textarea','number','number','number','ro','number','ro','number','ro','total','btn'];
+
  cols.forEach((t,i)=>{
   let c=row.insertCell();
-  if(t==='sl') c.innerText=rowIndex;
-  else if(t==='ro')c.innerHTML='<input class="readonly" readonly>';
-  else if(t==='textarea')c.innerHTML='<textarea rows="2" oninput="calc(this)"></textarea>';
-  else if(t==='btn')c.innerHTML='<button class="delete-btn" onclick="delRow(this)">X</button>';
-  else c.innerHTML=`<input type="${t}" oninput="calc(this)">`;
+
+  if(t==='sl') c.innerText=idx;
+
+  else if(t==='ro') c.innerHTML='<input class="readonly" readonly>';
+
+  else if(t==='total') 
+    c.innerHTML='<input type="number" oninput="backCalc(this)">';
+
+  else if(t==='textarea') 
+    c.innerHTML='<textarea rows="2" oninput="calc(this)"></textarea>';
+
+  else if(t==='btn') 
+    c.innerHTML='<button class="delete-btn" onclick="delRow(this)">X</button>';
+
+  else 
+    c.innerHTML=`<input type="${t}" oninput="calc(this)">`;
  });
 }
 
 function delRow(btn){
  btn.closest('tr').remove();
- reindex(); calcTotal();
+ reindex();
+ calcTotal();
 }
 
 function reindex(){
- document.querySelectorAll('#items tbody tr').forEach((r,i)=>r.cells[0].innerText=i+1);
+ document.querySelectorAll('#items tbody tr')
+ .forEach((r,i)=>r.cells[0].innerText=i+1);
 }
 
 function calc(el){
  let r=el.closest('tr');
+
  let price=+r.cells[4].children[0].value||0;
  let dis=+r.cells[5].children[0].value||0;
  let qty=+r.cells[6].children[0].value||0;
- let cg=+r.cells[8].children[0].value||0;
- let sg=+r.cells[10].children[0].value||0;
+
+ let cgP=+r.cells[8].children[0].value||0;
+ let sgP=+r.cells[10].children[0].value||0;
 
  let taxable=(price-dis)*qty;
- let cgst=taxable*cg/100;
- let sgst=taxable*sg/100;
- let total=taxable+cgst+sgst;
+
+ let cgAmt=taxable*cgP/100;
+ let sgAmt=taxable*sgP/100;
+
+ let total=taxable+cgAmt+sgAmt;
 
  r.cells[7].children[0].value=taxable.toFixed(2);
- r.cells[9].children[0].value=cgst.toFixed(2);
- r.cells[11].children[0].value=sgst.toFixed(2);
- r.cells[12].children[0].value=total.toFixed(2);
+ r.cells[9].children[0].value=cgAmt.toFixed(2);
+ r.cells[11].children[0].value=sgAmt.toFixed(2);
 
+ // ⚠️ important: update total only if user NOT editing it
+ if(document.activeElement !== r.cells[12].children[0]){
+   r.cells[12].children[0].value=total.toFixed(2);
+ }
+
+ calcTotal();
+}
+
+function backCalc(el){
+ let r=el.closest('tr');
+
+ let total=+r.cells[12].children[0].value||0;
+
+ let cgP=+r.cells[8].children[0].value||0;
+ let sgP=+r.cells[10].children[0].value||0;
+
+ let taxPercent = cgP + sgP;
+
+ let taxable = total / (1 + taxPercent/100);
+
+ let cgAmt = taxable * cgP / 100;
+ let sgAmt = taxable * sgP / 100;
+
+ let qty=+r.cells[6].children[0].value||1;
+
+ let price = taxable / qty;
+
+ // update values
+ r.cells[4].children[0].value=price.toFixed(2);
+ r.cells[7].children[0].value=taxable.toFixed(2);
+ r.cells[9].children[0].value=cgAmt.toFixed(2);
+ r.cells[11].children[0].value=sgAmt.toFixed(2);
+
+ calcTotal();
+}
+
+function calcIGST(){
+ let total=+document.getElementById('subtotal').value||0;
+ let p=+document.getElementById('igst_p').value||0;
+ document.getElementById('igst').value=(total*p/100).toFixed(2);
+ calcTotal();
+}
+
+function calcIGSTAmt(){
+ let total=+document.getElementById('subtotal').value||0;
+ let amt=+document.getElementById('igst').value||0;
+ document.getElementById('igst_p').value=((amt/total)*100||0).toFixed(2);
  calcTotal();
 }
 
 function calcTotal(){
  let sum=0;
+
  document.querySelectorAll('#items tbody tr').forEach(r=>{
   sum+=+r.cells[12].children[0].value||0;
  });
@@ -202,6 +276,7 @@ function calcTotal(){
  let igst=+document.getElementById('igst').value||0;
 
  let gross=sum+ship+igst;
+
  let rounded=Math.round(gross);
  let roundOff=(rounded-gross).toFixed(2);
 
@@ -213,17 +288,28 @@ function calcTotal(){
 function numberToWords(num){
  let a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
  let b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+
  if(num<20) return a[num];
  if(num<100) return b[Math.floor(num/10)]+' '+a[num%10];
  if(num<1000) return a[Math.floor(num/100)]+' Hundred '+numberToWords(num%100);
  if(num<100000) return numberToWords(Math.floor(num/1000))+' Thousand '+numberToWords(num%1000);
+
  return num;
 }
 
-['shipping','igst'].forEach(id=>document.getElementById(id).addEventListener('input',calcTotal));
+['shipping'].forEach(id=>{
+ document.getElementById(id).addEventListener('input',calcTotal);
+});
 
-function printColor(){document.body.classList.remove('bw');window.print();}
-function printBW(){document.body.classList.add('bw');window.print();}
+function printColor(){
+ document.body.classList.remove('bw');
+ window.print();
+}
+
+function printBW(){
+ document.body.classList.add('bw');
+ window.print();
+}
 
 init();
 </script>
